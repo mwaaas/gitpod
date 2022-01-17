@@ -22,15 +22,16 @@ import { TeamsContext, getCurrentTeam } from "../teams/teams-context";
 import { ContextMenuEntry } from "../components/ContextMenu";
 import { shortCommitMessage } from "./render-utils";
 import { Link } from "react-router-dom";
+import { Disposable } from "vscode-jsonrpc";
 
-export default function () {
+export default function (props: { project?: Project, isAdminDashboard?: boolean }) {
     const location = useLocation();
 
     const { teams } = useContext(TeamsContext);
     const team = getCurrentTeam(location, teams);
 
     const match = useRouteMatch<{ team: string, resource: string }>("/(t/)?:team/:resource");
-    const projectSlug = match?.params?.resource;
+    const projectSlug = props.isAdminDashboard ? props.project?.slug : match?.params?.resource;
 
     const [project, setProject] = useState<Project | undefined>();
 
@@ -41,27 +42,40 @@ export default function () {
     const [prebuilds, setPrebuilds] = useState<PrebuildWithStatus[]>([]);
 
     useEffect(() => {
+        let registration: Disposable;
+
         if (!project) {
             return;
         }
-        const registration = getGitpodService().registerClient({
-            onPrebuildUpdate: (update: PrebuildWithStatus) => {
-                if (update.info.projectId === project.id) {
-                    setPrebuilds(prev => [update, ...prev.filter(p => p.info.id !== update.info.id)]);
-                    setIsLoadingPrebuilds(false);
+        // Props come from the Admin dashboard and we do not need
+        // the variables generated from route or location
+        if (props.project) {
+            setProject(props.project);
+        }
+
+        // This call is excluded in the Admin dashboard
+        if (!props.isAdminDashboard) {
+            registration = getGitpodService().registerClient({
+                onPrebuildUpdate: (update: PrebuildWithStatus) => {
+                    if (update.info.projectId === project.id) {
+                        setPrebuilds(prev => [update, ...prev.filter(p => p.info.id !== update.info.id)]);
+                        setIsLoadingPrebuilds(false);
+                    }
                 }
-            }
-        });
+            });
+        }
 
         (async () => {
             setIsLoadingPrebuilds(true);
-            const prebuilds = await getGitpodService().server.findPrebuilds({ projectId: project.id });
+            const prebuilds = props && props.isAdminDashboard ?
+                await getGitpodService().server.adminFindPrebuilds({ projectId: project.id })
+                : await getGitpodService().server.findPrebuilds({ projectId: project.id });
             setPrebuilds(prebuilds);
             setIsLoadingPrebuilds(false);
         })();
 
-        return () => {
-            registration.dispose();
+        if (!props.isAdminDashboard) {
+            return () => { registration.dispose(); }
         }
     }, [project]);
 
@@ -74,15 +88,21 @@ export default function () {
                 ? await getGitpodService().server.getTeamProjects(team.id)
                 : await getGitpodService().server.getUserProjects());
 
-        const newProject = projectSlug && projects.find(
-            p => p.slug ? p.slug === projectSlug :
-            p.name === projectSlug);
+            const newProject = projectSlug && projects.find(
+                p => p.slug ? p.slug === projectSlug :
+                    p.name === projectSlug);
 
             if (newProject) {
                 setProject(newProject);
             }
         })();
     }, [projectSlug, team, teams]);
+
+    useEffect(() => {
+        if (prebuilds.length === 0) {
+            setIsLoadingPrebuilds(false);
+        }
+    }, [prebuilds])
 
     const prebuildContextMenu = (p: PrebuildWithStatus) => {
         const isFailed = p.status === "aborted" || p.status === "timeout" || !!p.error;
@@ -157,9 +177,9 @@ export default function () {
     }
 
     return <>
-        <Header title="Prebuilds" subtitle={`View recent prebuilds for active branches.`} />
-        <div className="app-container">
-            <div className="flex mt-8">
+        {!props.isAdminDashboard && <Header title="Prebuilds" subtitle={`View recent prebuilds for active branches.`} />}
+        <div className={props.isAdminDashboard ? "" : "app-container"}>
+            <div className={`flex ` + props.isAdminDashboard ? "" : "mt-8"} >
                 <div className="flex">
                     <div className="py-4">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 16 16" width="16" height="16"><path fill="#A8A29E" d="M6 2a4 4 0 100 8 4 4 0 000-8zM0 6a6 6 0 1110.89 3.477l4.817 4.816a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 010 6z" /></svg>
@@ -170,7 +190,7 @@ export default function () {
                 <div className="py-3 pl-3">
                     <DropDown prefix="Prebuild Status: " contextMenuWidth="w-32" entries={statusFilterEntries()} />
                 </div>
-                {(!isLoadingPrebuilds && prebuilds.length === 0) &&
+                {(!isLoadingPrebuilds && prebuilds.length === 0 && !props.isAdminDashboard) &&
                     <button onClick={() => triggerPrebuild(null)} className="ml-2">Run Prebuild</button>}
             </div>
             <ItemsList className="mt-2">
@@ -214,6 +234,8 @@ export default function () {
                     </ItemField>
                 </Item>)}
             </ItemsList>
+            {(!isLoadingPrebuilds && prebuilds.length === 0 && props.isAdminDashboard) &&
+                <div className="mt-3">No prebuilds triggered yet.</div>}
         </div>
 
     </>;

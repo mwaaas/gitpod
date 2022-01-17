@@ -10,6 +10,7 @@ import { ProjectConfig, ProjectSettings } from "@gitpod/gitpod-protocol";
 import { Transformer } from "../transformer";
 
 @Entity()
+@Index("ind_project-name", ["name", "cloneUrl", "slug"])
 // on DB but not Typeorm: @Index("ind_lastModified", ["_lastModified"])   // DBSync
 export class DBProject {
   @PrimaryColumn(TypeORM.UUID_COLUMN_TYPE)

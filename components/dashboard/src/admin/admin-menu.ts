@@ -4,13 +4,20 @@
  * See License-AGPL.txt in the project root for license information.
  */
 
-export const adminMenu = [{
-    title: 'Users',
-    link: ['/admin/users', '/admin']
-}, {
-    title: 'Workspaces',
-    link: ['/admin/workspaces']
-}, {
-    title: 'Settings',
-    link: ['/admin/settings']
-},];
+export const adminMenu = [
+    {
+        title: 'Users',
+        link: ['/admin/users', '/admin']
+    },
+    {
+        title: 'Workspaces',
+        link: ['/admin/workspaces']
+    }, {
+        title: 'Settings',
+        link: ['/admin/settings']
+    },
+    {
+        title: 'Projects',
+        link: ['/admin/projects']
+    },
+];
