@@ -20,7 +20,7 @@ HARVESTER_KUBECONFIG_PATH="$(mktemp)"
 MERGED_KUBECONFIG_PATH="$(mktemp)"
 
 log "Downloading and preparing Harvester kubeconfig"
-kubectl -n werft get secret harvester-kubeconfig -o jsonpath='{.data}' \
+kubectl --context=dev -n werft get secret harvester-kubeconfig -o jsonpath='{.data}' \
 | jq -r '.["harvester-kubeconfig.yml"]' \
 | base64 -d \
 | sed 's/default/harvester/g' \
@@ -30,7 +30,7 @@ kubectl -n werft get secret harvester-kubeconfig -o jsonpath='{.data}' \
 # the value of current-context
 log "Merging kubeconfig files ${KUBECONFIG_PATH} ${HARVESTER_KUBECONFIG_PATH} into ${MERGED_KUBECONFIG_PATH}"
 KUBECONFIG="${KUBECONFIG_PATH}:${HARVESTER_KUBECONFIG_PATH}" \
-    kubectl config view --flatten --merge > "${MERGED_KUBECONFIG_PATH}"
+    kubectl --context=dev config view --flatten --merge > "${MERGED_KUBECONFIG_PATH}"
 
 log "Overwriting ${KUBECONFIG_PATH}"
 mv "${MERGED_KUBECONFIG_PATH}" "${KUBECONFIG_PATH}"

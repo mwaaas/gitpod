@@ -18,18 +18,18 @@ fi
 
 "$THIS_DIR"/install-vm-ssh-keys.sh
 
-KUBECONFIG_PATH="/home/gitpod/.kube/config"
-KUBECONFIG_PATH="$(mktemp)"
-MERGED_KUBECONFIG_PATH="$(mktemp)"
+# KUBECONFIG_PATH="/home/gitpod/.kube/config"
+# KUBECONFIG_PATH="$(mktemp)"
+# MERGED_KUBECONFIG_PATH="$(mktemp)"
 
 
 
-scp ubuntu@127.0.0.1 \
-    -o UserKnownHostsFile=/dev/null \
-    -o StrictHostKeyChecking=no \
-    -o "ProxyCommand=/workspace/gitpod/dev/preview/ssh-proxy-command.sh %p ${namespace}" \
-    -i "$HOME/.ssh/vm_id_rsa" \
-    -p 8022
+# scp ubuntu@127.0.0.1 \
+#     -o UserKnownHostsFile=/dev/null \
+#     -o StrictHostKeyChecking=no \
+#     -o "ProxyCommand=/workspace/gitpod/dev/preview/ssh-proxy-command.sh %p ${namespace}" \
+#     -i "$HOME/.ssh/vm_id_rsa" \
+#     -p 8022
 
 
 # log "Downloading and preparing VM kubeconfig"
