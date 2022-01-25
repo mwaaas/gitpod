@@ -181,6 +181,7 @@ func (d *Daemon) startReadinessSignal() {
 	if err != nil {
 		log.WithError(err).Error("cannot start readiness probe")
 	}
+	log.Info("b")
 }
 
 // Stop gracefully shuts down the daemon. Once stopped, it
