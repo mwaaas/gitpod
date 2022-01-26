@@ -17,6 +17,7 @@ import { UserContext } from "../user-context";
 import settingsMenu from "./settings-menu";
 import IDENone from '../icons/IDENone.svg';
 import IDENoneDark from '../icons/IDENoneDark.svg';
+import CheckBox from "../components/CheckBox";
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -33,7 +34,7 @@ export default function Preferences() {
     const { user } = useContext(UserContext);
     const { setIsDark, isDark } = useContext(ThemeContext);
 
-    const updateUserIDEInfo = async (defaultDesktopIde: string, defaultIde: string) => {
+    const updateUserIDEInfo = async (defaultDesktopIde: string, defaultIde: string, useLatestVersion: boolean) => {
         const useDesktopIde = defaultDesktopIde !== DesktopNoneId;
         const desktopIde = useDesktopIde ? defaultDesktopIde : undefined;
         const additionalData = user?.additionalData ?? {};
@@ -41,13 +42,15 @@ export default function Preferences() {
         settings.useDesktopIde = useDesktopIde;
         settings.defaultIde = defaultIde;
         settings.defaultDesktopIde = desktopIde;
+        settings.useLatestVersion = useLatestVersion;
         additionalData.ideSettings = settings;
         getGitpodService().server.trackEvent({
             event: "ide_configuration_changed",
             properties: {
                 useDesktopIde,
                 defaultIde,
-                defaultDesktopIde: desktopIde
+                defaultDesktopIde: desktopIde,
+                useLatestVersion,
             },
         }).then().catch(console.error);
         await getGitpodService().server.updateLoggedInUser({ additionalData });
@@ -55,15 +58,22 @@ export default function Preferences() {
 
     const [defaultIde, setDefaultIde] = useState<string>(user?.additionalData?.ideSettings?.defaultIde || "");
     const actuallySetDefaultIde = async (value: string) => {
-        await updateUserIDEInfo(defaultDesktopIde, value);
+        await updateUserIDEInfo(defaultDesktopIde, value, useLatestVersion);
         setDefaultIde(value);
     }
 
     const [defaultDesktopIde, setDefaultDesktopIde] = useState<string>((user?.additionalData?.ideSettings?.useDesktopIde && user?.additionalData?.ideSettings?.defaultDesktopIde) || DesktopNoneId);
     const actuallySetDefaultDesktopIde = async (value: string) => {
-        await updateUserIDEInfo(value, defaultIde);
+        await updateUserIDEInfo(value, defaultIde, useLatestVersion);
         setDefaultDesktopIde(value);
     }
+
+    const [useLatestVersion, setUseLatestVersion] = useState<boolean>(user?.additionalData?.ideSettings?.useLatestVersion ?? false);
+    const actuallySetUseLatestVersion = async (value: boolean) => {
+        await updateUserIDEInfo(defaultDesktopIde, defaultIde, value);
+        setUseLatestVersion(value);
+    }
+
 
     const [ideOptions, setIdeOptions] = useState<IDEOptions | undefined>(undefined);
     useEffect(() => {
@@ -124,7 +134,11 @@ export default function Preferences() {
                     }
                 </>}
                 {desktopIdeOptions && <>
-                    <h3 className="mt-12">Desktop Editor <PillLabel type="warn" className="font-semibold mt-2 py-0.5 px-2 self-center">Beta</PillLabel></h3>
+                    <h3 className="mt-12 flex item-center space-x-2">
+                        <span>Desktop Editor</span>
+                      <PillLabel type="warn" className="font-semibold py-0.5 px-2 inline-block self-center">Beta</PillLabel>
+                      <CheckBox titleClass="text-base" className="mt-0" title="Include JetBrains EAP" desc="" checked={useLatestVersion} onChange={(e) => actuallySetUseLatestVersion(e.target.checked)}/>
+                    </h3>
                     <p className="text-base text-gray-500 dark:text-gray-400">Optionally, choose the default desktop editor for opening workspaces.</p>
                     <div className="my-4 gap-4 flex flex-wrap">
                         {
