@@ -4,6 +4,13 @@
  * See License-AGPL.txt in the project root for license information.
  */
 
+//#region setTimeout
+const originalSetTimeout = setTimeout;
+(setTimeout as any) = function<TArgs extends any[]>(callback: (...args: TArgs) => void, ms?: number, ...args: TArgs) {
+    console.trace("setTimeout called");
+    return originalSetTimeout(callback, ms, ...args)
+}
+//#endregion
 
 //#region heapdump
 /**
