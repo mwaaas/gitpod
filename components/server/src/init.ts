@@ -5,11 +5,46 @@
  */
 
 //#region setTimeout
+const setTimeoutMap = new Map<string, { stack: string, count: number }>();
+
 const originalSetTimeout = setTimeout;
 (setTimeout as any) = function<TArgs extends any[]>(callback: (...args: TArgs) => void, ms?: number, ...args: TArgs) {
-    console.trace("setTimeout called");
-    return originalSetTimeout(callback, ms, ...args)
-}
+    const stack = new Error().stack || "unknown stack";
+    const key = stack.split('\n')[2];
+    // console.log("STACK: " + stack);
+    const get = () => {
+        let counter = setTimeoutMap.get(key);
+        if (counter === undefined) {
+            counter = { stack, count: 0 };
+            setTimeoutMap.set(key, counter);
+        }
+        return counter;
+    };
+
+    const wrapper = (...args: TArgs): void => {
+        try {
+            callback(...args);
+        } finally {
+            const counter = get();
+            counter.count = counter.count - 1;
+        }
+    };
+    const counter = get();
+    counter.count = counter.count + 1;
+    return originalSetTimeout(wrapper, ms, ...args)
+};
+
+(async () => {
+    while (true) {
+        await new Promise(resolve => originalSetTimeout(resolve, 10000));
+        let total = 0;
+        for (const [k, v] of setTimeoutMap.entries()) {
+            console.log(`STACK: ${v.count} | ${k}`, { stack: v.stack });
+            total = total + v.count;
+        }
+        console.log(`STACK SUMMARY: ${total} total #########################################`);
+    }
+})()
 //#endregion
 
 //#region heapdump
