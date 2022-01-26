@@ -4,6 +4,10 @@
 
 package versions
 
+import (
+	"embed"
+)
+
 type Manifest struct {
 	Version    string     `json:"version"`
 	Components Components `json:"components"`
@@ -62,4 +66,10 @@ type Components struct {
 	WSManagerBridge Versioned `json:"wsManagerBridge"`
 	WSProxy         Versioned `json:"wsProxy"`
 	WSScheduler     Versioned `json:"wsScheduler"`
+}
+
+var embedded embed.FS
+
+func Embedded() (*Manifest, error) {
+	return loadEmbedded()
 }
