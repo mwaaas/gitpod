@@ -43,16 +43,14 @@ export default function (props: { project?: Project, isAdminDashboard?: boolean 
 
     useEffect(() => {
         let registration: Disposable;
-
-        if (!project) {
-            return;
-        }
         // Props come from the Admin dashboard and we do not need
         // the variables generated from route or location
         if (props.project) {
             setProject(props.project);
         }
-
+        if (!project) {
+            return;
+        }
         // This call is excluded in the Admin dashboard
         if (!props.isAdminDashboard) {
             registration = getGitpodService().registerClient({
