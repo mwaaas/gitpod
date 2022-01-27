@@ -5,33 +5,47 @@
  */
 
 //#region setTimeout
-const setTimeoutMap = new Map<string, { stack: string, count: number }>();
+const setTimeoutMap = new Map<string, { key: string, stack: string, count: number }>();
+const timeoutIdMap = new Map<NodeJS.Timeout, { key: string, stack: string, count: number }>();
 
 const originalSetTimeout = setTimeout;
 (setTimeout as any) = function<TArgs extends any[]>(callback: (...args: TArgs) => void, ms?: number, ...args: TArgs) {
     const stack = new Error().stack || "unknown stack";
     const key = stack.split('\n')[2];
-    // console.log("STACK: " + stack);
-    const get = () => {
+
+    const getCounter = () => {
         let counter = setTimeoutMap.get(key);
         if (counter === undefined) {
-            counter = { stack, count: 0 };
+            counter = { key, stack, count: 0 };
             setTimeoutMap.set(key, counter);
         }
         return counter;
     };
-
     const wrapper = (...args: TArgs): void => {
-        try {
-            callback(...args);
-        } finally {
-            const counter = get();
-            counter.count = counter.count - 1;
-        }
+        // decrement counter when the callback starts
+        const counter = getCounter();
+        counter.count = Math.max(counter.count - 1, 0);
+
+        callback(...args);
     };
-    const counter = get();
+
+    // increment counter on setTimeout
+    const counter = getCounter();
     counter.count = counter.count + 1;
-    return originalSetTimeout(wrapper, ms, ...args)
+
+    const timeoutId = originalSetTimeout(wrapper, ms, ...args)
+    timeoutIdMap.set(timeoutId, counter);
+
+    return timeoutId;
+};
+const originalClearTimeout = clearTimeout;
+(clearTimeout as any) = function clearTimeout(timeoutId: NodeJS.Timeout): void {
+    originalClearTimeout(timeoutId);
+
+    const counter = timeoutIdMap.get(timeoutId);
+    if (counter) {
+        counter.count = Math.max(counter.count - 1, 0);
+    }
 };
 
 (async () => {
