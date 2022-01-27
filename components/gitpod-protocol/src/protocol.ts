@@ -463,11 +463,18 @@ export interface Workspace {
     basedOnPrebuildId?: string;
 
     basedOnSnapshotId?: string;
+
+    imageBuildLogInfo?: ImageBuildLogInfo;
 }
 
 export type WorkspaceSoftDeletion = "user" | "gc";
 
 export type WorkspaceType = "regular" | "prebuild" | "probe";
+
+export interface ImageBuildLogInfo {
+    url: string,
+    headers: { [key: string]: string },
+}
 
 export namespace Workspace {
 

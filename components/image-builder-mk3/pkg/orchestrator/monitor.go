@@ -20,6 +20,7 @@ import (
 	"github.com/hashicorp/go-retryablehttp"
 	"golang.org/x/xerrors"
 
+	"github.com/gitpod-io/gitpod/common-go/kubernetes"
 	"github.com/gitpod-io/gitpod/common-go/log"
 	"github.com/gitpod-io/gitpod/common-go/tracing"
 	"github.com/gitpod-io/gitpod/image-builder/api"
@@ -202,6 +203,10 @@ func extractBuildStatus(status *wsmanapi.WorkspaceStatus) *api.BuildInfo {
 		BaseRef:   status.Metadata.Annotations[annotationBaseRef],
 		Status:    s,
 		StartedAt: status.Metadata.StartedAt.Seconds,
+		LogUrl:    fmt.Sprintf("%s/_supervisor/v1", status.Metadata.Annotations[kubernetes.WorkspaceURLAnnotation]),
+		LogUrlExtraHeaders: map[string]string{
+			"x-gitpod-owner-token": status.Auth.OwnerToken,
+		},
 	}
 }
 

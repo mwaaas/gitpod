@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2021 Gitpod GmbH. All rights reserved.
+ * Copyright (c) 2022 Gitpod GmbH. All rights reserved.
  * Licensed under the GNU Affero General Public License (AGPL).
  * See License-AGPL.txt in the project root for license information.
  */
@@ -455,6 +455,11 @@ export class BuildInfo extends jspb.Message {
     setStartedAt(value: number): BuildInfo;
     getBuildId(): string;
     setBuildId(value: string): BuildInfo;
+    getLogUrl(): string;
+    setLogUrl(value: string): BuildInfo;
+
+    getLogUrlExtraHeadersMap(): jspb.Map<string, string>;
+    clearLogUrlExtraHeadersMap(): void;
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): BuildInfo.AsObject;
@@ -473,6 +478,9 @@ export namespace BuildInfo {
         status: BuildStatus,
         startedAt: number,
         buildId: string,
+        logUrl: string,
+
+        logUrlExtraHeadersMap: Array<[string, string]>,
     }
 }
 

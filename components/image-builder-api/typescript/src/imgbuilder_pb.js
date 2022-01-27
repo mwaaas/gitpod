@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2021 Gitpod GmbH. All rights reserved.
+ * Copyright (c) 2022 Gitpod GmbH. All rights reserved.
  * Licensed under the GNU Affero General Public License (AGPL).
  * See License-AGPL.txt in the project root for license information.
  */
@@ -3426,7 +3426,9 @@ proto.builder.BuildInfo.toObject = function(includeInstance, msg) {
     baseRef: jspb.Message.getFieldWithDefault(msg, 4, ""),
     status: jspb.Message.getFieldWithDefault(msg, 2, 0),
     startedAt: jspb.Message.getFieldWithDefault(msg, 3, 0),
-    buildId: jspb.Message.getFieldWithDefault(msg, 5, "")
+    buildId: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    logUrl: jspb.Message.getFieldWithDefault(msg, 6, ""),
+    logUrlExtraHeadersMap: (f = msg.getLogUrlExtraHeadersMap()) ? f.toObject(includeInstance, undefined) : []
   };
 
   if (includeInstance) {
@@ -3482,6 +3484,16 @@ proto.builder.BuildInfo.deserializeBinaryFromReader = function(msg, reader) {
     case 5:
       var value = /** @type {string} */ (reader.readString());
       msg.setBuildId(value);
+      break;
+    case 6:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setLogUrl(value);
+      break;
+    case 7:
+      var value = msg.getLogUrlExtraHeadersMap();
+      reader.readMessage(value, function(message, reader) {
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readString, null, "", "");
+         });
       break;
     default:
       reader.skipField();
@@ -3546,6 +3558,17 @@ proto.builder.BuildInfo.serializeBinaryToWriter = function(message, writer) {
       5,
       f
     );
+  }
+  f = message.getLogUrl();
+  if (f.length > 0) {
+    writer.writeString(
+      6,
+      f
+    );
+  }
+  f = message.getLogUrlExtraHeadersMap(true);
+  if (f && f.getLength() > 0) {
+    f.serializeBinary(7, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeString);
   }
 };
 
@@ -3638,6 +3661,46 @@ proto.builder.BuildInfo.prototype.getBuildId = function() {
 proto.builder.BuildInfo.prototype.setBuildId = function(value) {
   return jspb.Message.setProto3StringField(this, 5, value);
 };
+
+
+/**
+ * optional string log_url = 6;
+ * @return {string}
+ */
+proto.builder.BuildInfo.prototype.getLogUrl = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 6, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.builder.BuildInfo} returns this
+ */
+proto.builder.BuildInfo.prototype.setLogUrl = function(value) {
+  return jspb.Message.setProto3StringField(this, 6, value);
+};
+
+
+/**
+ * map<string, string> log_url_extra_headers = 7;
+ * @param {boolean=} opt_noLazyCreate Do not create the map if
+ * empty, instead returning `undefined`
+ * @return {!jspb.Map<string,string>}
+ */
+proto.builder.BuildInfo.prototype.getLogUrlExtraHeadersMap = function(opt_noLazyCreate) {
+  return /** @type {!jspb.Map<string,string>} */ (
+      jspb.Message.getMapField(this, 7, opt_noLazyCreate,
+      null));
+};
+
+
+/**
+ * Clears values from the map. The map will be non-null.
+ * @return {!proto.builder.BuildInfo} returns this
+ */
+proto.builder.BuildInfo.prototype.clearLogUrlExtraHeadersMap = function() {
+  this.getLogUrlExtraHeadersMap().clear();
+  return this;};
 
 
 /**

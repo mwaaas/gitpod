@@ -128,4 +128,6 @@ message BuildInfo {
     BuildStatus status = 2;
     int64 started_at = 3;
     string build_id = 5;
+    string log_url = 6;
+    map<string, string> log_url_extra_headers = 7;
 }

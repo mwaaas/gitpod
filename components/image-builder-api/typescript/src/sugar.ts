@@ -15,6 +15,7 @@ import { BuildRequest, BuildResponse, BuildStatus, LogsRequest, LogsResponse, Re
 import { injectable, inject, optional } from 'inversify';
 import * as grpc from "@grpc/grpc-js";
 import { TextDecoder } from "util";
+import { ImageBuildLogInfo } from "@gitpod/gitpod-protocol";
 
 export const ImageBuilderClientProvider = Symbol("ImageBuilderClientProvider");
 
@@ -82,6 +83,7 @@ export class CachingImageBuilderClientProvider implements ImageBuilderClientProv
 // StagedBuildResponse captures the multi-stage nature (starting, running, done) of image builds.
 export interface StagedBuildResponse {
     buildPromise: Promise<BuildResponse>;
+    logPromise: Promise<ImageBuildLogInfo>;
 
     actuallyNeedsBuild: boolean;
     ref: string;
@@ -133,9 +135,11 @@ export class PromisifiedImageBuilderClient {
         const span = TraceContext.startSpan(`/image-builder/build`, ctx);
 
         const buildResult = new Deferred<BuildResponse>();
+        const logInfo = new Deferred<ImageBuildLogInfo>();
 
         const result = new Deferred<StagedBuildResponse>();
         const resultResp: StagedBuildResponse = {
+            logPromise: logInfo.promise,
             buildPromise: buildResult.promise,
             actuallyNeedsBuild: true,
             ref: "unknown",
@@ -151,6 +155,7 @@ export class PromisifiedImageBuilderClient {
                     result.reject(err);
                 } else {
                     buildResult.reject(err);
+                    logInfo.reject(err);
                 }
 
                 TraceContext.setError({ span }, err);
@@ -166,6 +171,21 @@ export class PromisifiedImageBuilderClient {
                     resultResp.baseRef = resp.getBaseRef();
                 }
 
+                if (resp.hasInfo() && !logInfo.isResolved) {
+                    // assumes that log info stays stable for instance lifetime
+                    const info = resp.getInfo()
+                    if (info) {
+                        const headers: { [key: string]: string } = {};
+                        for (const [k, v] of info.getLogUrlExtraHeadersMap().entries()) {
+                            headers[k] = v;
+                        }
+                        logInfo.resolve({
+                            url: info.getLogUrl(),
+                            headers,
+                        });
+                    }
+                }
+
                 if (resp.getStatus() == BuildStatus.RUNNING) {
                     resultResp.actuallyNeedsBuild = true;
                     result.resolve(resultResp);
@@ -176,6 +196,9 @@ export class PromisifiedImageBuilderClient {
                         buildResult.resolve(resp);
                     } else {
                         buildResult.resolve(resp);
+                    }
+                    if (!logInfo.isResolved) {
+                        logInfo.reject(new Error("no log stream for this image build"));
                     }
 
                     span.finish();

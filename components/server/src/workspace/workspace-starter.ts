@@ -575,6 +575,13 @@ export class WorkspaceStarter {
             span.log({ "ref": workspace.imageNameResolved });
             await this.workspaceDb.trace({ span }).store(workspace);
 
+            // Make sure we persist logInfo once we retrieve it
+            result.logPromise.then(async logInfo => {
+                await this.workspaceDb.trace({span}).updatePartial(workspace.id, {
+                    imageBuildLogInfo: logInfo,
+                }).catch(err => log.error("error writing image build log info to the DB", err));
+            }).catch(err => log.warn("image build: never received log info"));
+
             // Update workspace instance to tell the world we're building an image
             const workspaceImage = result.ref;
             const status: WorkspaceInstanceStatus = result.actuallyNeedsBuild ? { ...instance.status, phase: 'preparing' } : instance.status;
